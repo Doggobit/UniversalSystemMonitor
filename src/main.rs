@@ -1,5 +1,5 @@
 use sysinfo::{Components, Disks, Networks, System, Pid};
-use std::{env, process, str, string};
+use std::{process, str, string, thread, time};
 
 //conversions
 fn kb_to_gb(kb: u64) -> u64 {
@@ -10,7 +10,34 @@ fn b_to_gb(b: u64) -> u64 {
     return (b) / (1024 * 1024 * 1024);
 }
 
-//fn for RAM infos
+//components infos
+
+struct ComponentInfo{
+    label: String,
+    temperature: f32,
+}
+
+fn componentinfo() -> Vec<ComponentInfo> {
+
+    let components = Components::new_with_refreshed_list();
+    
+    let mut components_info = Vec::new();
+
+    for component in components.list() {
+        let label = component.label().to_string();
+        let temperature = component.temperature();
+
+        components_info.push(ComponentInfo {
+            label,
+            temperature,
+        });
+    }
+
+    return components_info
+    
+}
+
+//RAM infos
 
 struct RamInfo {
     total_gb: u64,
@@ -105,12 +132,60 @@ fn networkinfo() -> Vec<NetworkInfo> {
     
 }
 
+//process infos
+
+struct ProcessInfo {
+    pid: Pid,
+    name: String,
+    cpu_usage: f32,
+    memory: u64,
+}
+
+fn processinfo(sys: &mut System) -> Vec<ProcessInfo> {
+    let pids: Vec<_> = sys.processes().keys().copied().collect();
+    
+    for pid in &pids {
+        sys.refresh_process(*pid);
+    }
+
+    let processes: Vec<ProcessInfo> = pids.iter()
+        .filter_map(|pid| {
+            sys.process(*pid).map(|process| ProcessInfo {
+                pid: *pid,
+                name: process.name().to_string(),
+                cpu_usage: process.cpu_usage(),
+                memory: process.memory(),
+            })
+        })
+        .collect();
+    
+    return processes;
+}
+
 //main
 
 fn main(){
     let mut sys = System::new_all();
 
     sys.refresh_all();
+
+    //components
+
+    println!("Components!!!!");
+
+    let components = componentinfo();
+
+    if components.is_empty() {
+        println!("Cannot access data, are running as an administrator?");
+    }
+
+    else{
+        for component in components {
+            println!("{}", component.label);
+            println!("Temperature: {} °C", component.temperature);
+            println!("-----------------------------");
+        }
+    }
 
     //RAM
 
@@ -165,23 +240,15 @@ fn main(){
 
     println!("Number of processes: {}", sys.processes().len());
 
-    let pids: Vec<_> = sys.processes().keys().copied().collect();
-    
-    for pid in &pids {
-        sys.refresh_process(*pid);
+    let processes = processinfo(&mut sys);
+
+    for process in processes {
+        println!("PID: {}", process.pid);
+        println!("Name: {}", process.name);
+        println!("CPU Usage: {:.2}%", process.cpu_usage);
+        println!("Memory: {} KB", process.memory);
+        println!("*****************************");
     }
-    
-    // Display process information
-    for pid in &pids {
-        sys.refresh_process(*pid);
-        
-        if let Some(process) = sys.process(*pid) {
-            
-            println!("PID:{}\tName:{} :\n CPU:{}%\tRAM:{} KB", 
-                     pid, process.name(), process.cpu_usage(), process.memory());
-                     println!("**********************************")
-        }
-        
-    }
+
     process::exit(0);
 }
