@@ -1,5 +1,5 @@
 use sysinfo::{Components, Disks, Networks, System, Pid};
-use std::{process, str, string, thread, time};
+use std::{process, str, string, thread, time::Duration};
 
 //conversions
 fn kb_to_gb(kb: u64) -> u64 {
