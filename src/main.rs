@@ -1,5 +1,5 @@
 use sysinfo::{Components, Disks, Networks, System, Pid};
-use std::{process, str, string, thread, time::Duration};
+use std::{env::{self, args}, process::{self, exit}, str, string, thread, time::Duration};
 
 //conversions
 fn kb_to_gb(kb: u64) -> u64 {
@@ -162,12 +162,37 @@ fn processinfo(sys: &mut System) -> Vec<ProcessInfo> {
     return processes;
 }
 
+//search process by name
+
+fn search_process(name: String) -> ProcessInfo {
+    let mut sys = System::new_all();
+    let target = processinfo(&mut sys).into_iter().find(|p| p.name == name).expect("PROCESS NOT FOUND!\n");
+
+    return target;
+
+}
+
 //main
 
 fn main(){
+
+    //system refresh
+
     let mut sys = System::new_all();
 
     sys.refresh_all();
+
+    //args
+
+    let args: Vec<String> = args().collect();
+
+    if args[1] == "-s"{
+        let process = search_process(args[2].clone());
+        println!("PROCESS FOUND!");
+        println!("PID: {}, name: {}, cpu_usage: {} %, ram_usage: {} bytes", process.pid, process.name, process.cpu_usage, process.memory);
+        exit(0);
+    }
+
 
     //components
 
