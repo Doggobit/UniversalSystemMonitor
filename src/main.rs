@@ -172,12 +172,14 @@ fn search_process(name: String) -> ProcessInfo {
 
 }
 
-fn lookfor_process(name: String) -> Vec<ProcessInfo> {
+//look for a process by a keyword
+
+fn lookfor_process(word: String) -> Vec<ProcessInfo> {
     let mut sys = System::new_all();
     let process_list = processinfo(&mut sys);
     let mut target_list: Vec<ProcessInfo> = Vec::new();
     for process in process_list {
-        if process.name.contains(&name){
+        if process.name.contains(&word){
             target_list.push(process);
         }
         continue;
