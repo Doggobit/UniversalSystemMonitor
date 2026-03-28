@@ -172,6 +172,19 @@ fn search_process(name: String) -> ProcessInfo {
 
 }
 
+fn lookfor_process(name: String) -> Vec<ProcessInfo> {
+    let mut sys = System::new_all();
+    let process_list = processinfo(&mut sys);
+    let mut target_list: Vec<ProcessInfo> = Vec::new();
+    for process in process_list {
+        if process.name.contains(&name){
+            target_list.push(process);
+        }
+        continue;
+    }
+    return target_list;
+}
+
 //main
 
 fn main(){
@@ -193,6 +206,21 @@ fn main(){
         exit(0);
     }
 
+    else if args[1] == "-lf" {
+        let process_list = lookfor_process(args[2].clone());
+        if process_list.is_empty() {
+            println!("NO PROCESS FOUND WITH THIS WORD: {}", args[2]);
+            exit(1);
+        }
+        for process in process_list{
+            println!("PID: {}", process.pid);
+            println!("CPU Usage: {:.2}%", process.cpu_usage);
+            println!("Name: {}", process.name);
+            println!("Memory: {} KB", process.memory);
+            println!("*****************************");
+        }
+        exit(0);
+    }
 
     //components
 
