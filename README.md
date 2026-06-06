@@ -15,3 +15,8 @@ Now we are trying to find the process "firefox.exe" and find its infos, if firef
 cargo run -- -lf fire
 ```
 Now we are looking for every process with the word "fire" in it, if it doesn't found anything it returnan error.
+
+# TO DO
+
+- Adding real-time monitoring;
+- Adding GUI with Slint.
