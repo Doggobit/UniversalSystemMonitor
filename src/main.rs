@@ -201,28 +201,35 @@ fn main(){
 
     let args: Vec<String> = args().collect();
 
-    if args[1] == "-s"{
-        let process = search_process(args[2].clone());
-        println!("PROCESS FOUND!");
-        println!("PID: {}, name: {}, cpu_usage: {} %, ram_usage: {} bytes", process.pid, process.name, process.cpu_usage, process.memory);
-        exit(0);
+    if args.len() > 1 {
+
+        if args[1] == "-s"{
+            let process = search_process(args[2].clone());
+            println!("PROCESS FOUND!");
+            println!("PID: {}, name: {}, cpu_usage: {} %, ram_usage: {} bytes", process.pid, process.name, process.cpu_usage, process.memory);
+            exit(0);
+        }
+
+        else if args[1] == "-lf" {
+            let process_list = lookfor_process(args[2].clone());
+            if process_list.is_empty() {
+                println!("NO PROCESS FOUND WITH THIS WORD: {}", args[2]);
+                exit(1);
+            }
+            for process in process_list{
+                println!("PID: {}", process.pid);
+                println!("CPU Usage: {:.2}%", process.cpu_usage);
+                println!("Name: {}", process.name);
+                println!("Memory: {} KB", process.memory);
+                println!("*****************************");
+            }
+            exit(0);
+        }
+
+        
     }
 
-    else if args[1] == "-lf" {
-        let process_list = lookfor_process(args[2].clone());
-        if process_list.is_empty() {
-            println!("NO PROCESS FOUND WITH THIS WORD: {}", args[2]);
-            exit(1);
-        }
-        for process in process_list{
-            println!("PID: {}", process.pid);
-            println!("CPU Usage: {:.2}%", process.cpu_usage);
-            println!("Name: {}", process.name);
-            println!("Memory: {} KB", process.memory);
-            println!("*****************************");
-        }
-        exit(0);
-    }
+
 
     //components
 
