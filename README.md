@@ -16,6 +16,13 @@ cargo run -- -lf fire
 ```
 Now we are looking for every process with the word "fire" in it, if it doesn't found anything it returnan error.
 
+## UI
+After data is collected the program starts the program window.
+![UIStart](imgs/UI1.png)  
+You can than change the tab to see the information you need, and also go to the _process_ tab and search a process, like the -lf option in CLI:  
+![ProcessTab](imgs/ProcessTab.png)  
+![ProcessSearch](imgs/ProcessSearch.png)
+
 # TO DO
 
 - Adding real-time monitoring
