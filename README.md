@@ -10,11 +10,10 @@ Now we are trying to find the process "firefox.exe" and find its infos, if firef
 ```bash
 cargo run -- -s firefox.exe
 ```
-
+Now we are looking for every process with the word "fire" in it, if it doesn't found anything it returnan error.s
 ```bash
 cargo run -- -lf fire
 ```
-Now we are looking for every process with the word "fire" in it, if it doesn't found anything it returnan error.
 
 ## UI
 After data is collected the program starts the program window.
