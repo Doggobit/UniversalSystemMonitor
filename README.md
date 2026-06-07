@@ -18,5 +18,4 @@ Now we are looking for every process with the word "fire" in it, if it doesn't f
 
 # TO DO
 
-- Adding real-time monitoring;
-- Adding GUI with Slint.
+- Adding real-time monitoring

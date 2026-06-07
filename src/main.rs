@@ -1,5 +1,8 @@
+use std::rc::Rc;
 use sysinfo::{Components, Disks, Networks, System, Pid};
-use std::{env::args, process::{self, exit}};
+use std::{env::args, process::exit};
+
+slint::include_modules!();
 
 //conversions
 fn kb_to_gb(kb: u64) -> u64 {
@@ -8,6 +11,13 @@ fn kb_to_gb(kb: u64) -> u64 {
 
 fn b_to_gb(b: u64) -> u64 {
     return (b) / (1024 * 1024 * 1024);
+}
+
+fn format_bytes(b: u64) -> String {
+    if b < 1024             { format!("{} B", b) }
+    else if b < 1<<20       { format!("{:.1} KB", b as f64 / 1024.0) }
+    else if b < 1<<30       { format!("{:.1} MB", b as f64 / 1_048_576.0) }
+    else                    { format!("{:.2} GB", b as f64 / 1_073_741_824.0) }
 }
 
 //components infos
@@ -312,5 +322,77 @@ fn main(){
         println!("*****************************");
     }
 
-    process::exit(0);
+    //UI
+
+    let ui = MainWindow::new().unwrap();
+
+    // RAM
+    let ram = raminfo(&sys);
+    ui.set_total_ram_gb(ram.total_gb      as i32);
+    ui.set_used_ram_gb(ram.used_gb        as i32);
+    ui.set_total_swap_gb(ram.total_swap_gb as i32);
+    ui.set_used_swap_gb(ram.used_swap_gb  as i32);
+
+    // CPU
+    let cpu = cpuinfo(&sys);
+    ui.set_cpu_usage(cpu.usage_percent);
+    ui.set_num_cpus(cpu.num_cpus          as i32);
+    ui.set_cpu_frequency_mhz(cpu.frequency_mhz as i32);
+
+    // Components
+    ui.set_components(Rc::new(slint::VecModel::from(
+        componentinfo().into_iter().map(|c| ComponentData {
+            label:       c.label.into(),
+            temperature: c.temperature,
+        }).collect::<Vec<_>>()
+    )).into());
+
+    // Disks
+    ui.set_disks(Rc::new(slint::VecModel::from(
+        diskinfo().into_iter().map(|d| DiskData {
+            name:          d.name.into(),
+            total_gb:      d.total_space_gb     as i32,
+            available_gb:  d.available_space_gb as i32,
+        }).collect::<Vec<_>>()
+    )).into());
+
+    // Networks
+    ui.set_networks(Rc::new(slint::VecModel::from(
+        networkinfo().into_iter().map(|n| NetworkData {
+            interface_name: n.interface_name.into(),
+            received:       format_bytes(n.received_bytes).into(),
+            transmitted:    format_bytes(n.transmitted_bytes).into(),
+        }).collect::<Vec<_>>()
+    )).into());
+
+    // Processes — keep full list for filtering
+    let all_procs: Vec<ProcessData> = processinfo(&mut sys).into_iter().map(|p| ProcessData {
+        pid:       p.pid.as_u32() as i32,
+        name:      p.name.into(),
+        cpu_usage: p.cpu_usage,
+        memory:    format_bytes(p.memory).into(),
+    }).collect();
+
+    let proc_model = Rc::new(slint::VecModel::from(all_procs.clone()));
+    ui.set_processes(proc_model.clone().into());
+
+    // Search/filter callback
+    ui.on_search_requested({
+        let proc_model  = proc_model.clone();
+        let all_procs   = all_procs.clone();
+        move |term| {
+            let t = term.to_string();
+            let filtered: Vec<ProcessData> = if t.is_empty() {
+                all_procs.clone()
+            } else {
+                all_procs.iter()
+                    .filter(|p| p.name.as_str().contains(&*t))
+                    .cloned()
+                    .collect()
+            };
+            proc_model.set_vec(filtered);
+        }
+    });
+
+    ui.run().unwrap();   // blocks until window is closed
 }

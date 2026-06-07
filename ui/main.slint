@@ -1,21 +1,127 @@
-export component MainWindow {
-    width: 800px;
-    height: 800px;
+import { Button, VerticalBox, HorizontalBox, TabWidget,
+         ListView, LineEdit, GroupBox } from "std-widgets.slint";
 
-    HorizontalLayout {
-        padding: 20px;
-        spacing: 10px;
-        alignment: center;  // Centers the layout vertically
-        
-        Text {
-            text: "test";
-            font-size: 30px;
-            color: white;
-        }
-        Text {
-            text: "test";
-            font-size: 30px;
-            color: white;
+export struct ComponentData { label: string, temperature: float }
+export struct DiskData      { name: string, total-gb: int, available-gb: int }
+export struct NetworkData   { interface-name: string, received: string, transmitted: string }
+export struct ProcessData   { pid: int, name: string, cpu-usage: float, memory: string }
+
+export component MainWindow inherits Window {
+    title: "System Monitor";
+    min-width: 750px;
+    min-height: 550px;
+
+    // RAM
+    in property <int>   total-ram-gb;
+    in property <int>   used-ram-gb;
+    in property <int>   total-swap-gb;
+    in property <int>   used-swap-gb;
+    // CPU
+    in property <float> cpu-usage;
+    in property <int>   num-cpus;
+    in property <int>   cpu-frequency-mhz;
+    // Lists
+    in property <[ComponentData]> components;
+    in property <[DiskData]>      disks;
+    in property <[NetworkData]>   networks;
+    in property <[ProcessData]>   processes;
+
+    callback search-requested(string);
+
+    VerticalBox {
+        Text { text: "System Monitor"; font-size: 22px; font-weight: 700; }
+
+        TabWidget {
+
+            Tab {
+                title: "Overview";
+                VerticalBox {
+                    GroupBox {
+                        title: "CPU";
+                        VerticalBox {
+                            Text { text: "Usage: " + root.cpu-usage + " %"; }
+                            Text { text: "Cores: " + root.num-cpus; }
+                            Text { text: "Frequency: " + root.cpu-frequency-mhz + " MHz"; }
+                        }
+                    }
+                    GroupBox {
+                        title: "RAM";
+                        VerticalBox {
+                            Text { text: "Total: "      + root.total-ram-gb  + " GB"; }
+                            Text { text: "Used: "       + root.used-ram-gb   + " GB"; }
+                            Text { text: "Swap total: " + root.total-swap-gb + " GB"; }
+                            Text { text: "Swap used: "  + root.used-swap-gb  + " GB"; }
+                        }
+                    }
+                }
+            }
+
+            Tab {
+                title: "Disks";
+                ListView {
+                    for disk in root.disks: Rectangle {
+                        height: 60px;
+                        VerticalBox {
+                            padding: 8px;
+                            Text { text: disk.name; font-weight: 700; }
+                            Text { text: "Total: " + disk.total-gb + " GB   Free: " + disk.available-gb + " GB"; }
+                        }
+                    }
+                }
+            }
+
+            Tab {
+                title: "Networks";
+                ListView {
+                    for net in root.networks: Rectangle {
+                        height: 60px;
+                        VerticalBox {
+                            padding: 8px;
+                            Text { text: net.interface-name; font-weight: 700; }
+                            Text { text: "↓ " + net.received + "   ↑ " + net.transmitted; }
+                        }
+                    }
+                }
+            }
+
+            Tab {
+                title: "Processes";
+                VerticalBox {
+                    HorizontalBox {
+                        search-box := LineEdit { placeholder-text: "Filter by name..."; 
+                        accepted => { root.search-requested(self.text); }
+                        }
+                        Button {
+                            text: "Search";
+                            clicked => { root.search-requested(search-box.text); }
+                        }
+                    }
+                    ListView {
+                        for proc in root.processes: Rectangle {
+                            height: 56px;
+                            VerticalBox {
+                                padding: 4px;
+                                Text { text: "[" + proc.pid + "] " + proc.name; font-weight: 700; }
+                                Text { text: "CPU: " + proc.cpu-usage + "%   Mem: " + proc.memory; }
+                            }
+                        }
+                    }
+                }
+            }
+
+            Tab {
+                title: "Temperatures";
+                ListView {
+                    for comp in root.components: Rectangle {
+                        height: 48px;
+                        HorizontalBox {
+                            padding: 8px;
+                            Text { text: comp.label; horizontal-stretch: 1; }
+                            Text { text: comp.temperature + " °C"; }
+                        }
+                    }
+                }
+            }
         }
     }
 }
