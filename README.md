@@ -34,6 +34,4 @@ Than I press the refresh button and CPU usage is at 6%:
 
 - Adding real-time monitoring with no refresh button;
 - Better data collecting of:  
-    - CPU frequency;
     - CPU usage of processes;
-    - Network data.

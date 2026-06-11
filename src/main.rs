@@ -1,7 +1,6 @@
-use std::rc::Rc;
-use slint::{SharedString, VecModel};
-use sysinfo::{Components, Disks, Networks, System, Pid};
-use std::{env::args, process::exit, thread, {time::Duration}, {cell::RefCell}};
+use slint;
+use sysinfo::{Components, Disks, MINIMUM_CPU_UPDATE_INTERVAL, Networks, Pid, System};
+use std::{env::args, process::exit, thread, {cell::RefCell}, rc::Rc};
 
 slint::include_modules!();
 
@@ -13,6 +12,8 @@ fn kb_to_gb(kb: u64) -> u64 {
 fn b_to_gb(b: u64) -> u64 {
     return (b) / (1024 * 1024 * 1024);
 }
+
+//Data to string
 
 fn format_bytes(b: u64) -> String {
     if b < 1024             { format!("{} B", b) }
@@ -83,7 +84,7 @@ struct CpuInfo {
 fn cpuinfo(sys: &System) -> CpuInfo {
     let usage = sys.global_cpu_info().cpu_usage();
     let cpus = sys.cpus().len();
-    let frequency = sys.global_cpu_info().frequency();
+    let frequency = sys.cpus().first().map(|c| c.frequency()).unwrap_or(0);
 
     return CpuInfo {
         usage_percent: usage,
@@ -129,7 +130,11 @@ struct NetworkInfo {
 }
 
 fn networkinfo() -> Vec<NetworkInfo> {
-    let networks = Networks::new_with_refreshed_list();
+    let mut networks = Networks::new_with_refreshed_list();
+
+    thread::sleep(sysinfo::MINIMUM_CPU_UPDATE_INTERVAL);
+
+    networks.refresh();
 
     let net_infos: Vec<NetworkInfo> = networks.list().iter().map(|(name, data)| {
         NetworkInfo {
@@ -153,22 +158,16 @@ struct ProcessInfo {
 }
 
 fn processinfo(sys: &mut System) -> Vec<ProcessInfo> {
-    let pids: Vec<_> = sys.processes().keys().copied().collect();
-    
-    for pid in &pids {
-        sys.refresh_process(*pid);
-    }
+    sys.refresh_processes();
+    thread::sleep(MINIMUM_CPU_UPDATE_INTERVAL);
+    sys.refresh_processes();
 
-    let processes: Vec<ProcessInfo> = pids.iter()
-        .filter_map(|pid| {
-            sys.process(*pid).map(|process| ProcessInfo {
-                pid: *pid,
-                name: process.name().to_string(),
-                cpu_usage: process.cpu_usage(),
-                memory: process.memory(),
-            })
-        })
-        .collect();
+    let processes = sys.processes().iter().map(|(pid, process)| ProcessInfo {
+        pid: *pid,
+        name: process.name().to_string(),
+        cpu_usage: process.cpu_usage() / sys.cpus().len() as f32,
+        memory: process.memory(),
+    }).collect();
     
     return processes;
 }
@@ -279,6 +278,8 @@ fn main(){
 
     //CPU
 
+    sys.refresh_cpu_usage();
+
     let cpu = CpuInfo {
         usage_percent: cpuinfo(&sys).usage_percent,
         num_cpus: cpuinfo(&sys).num_cpus,
@@ -313,19 +314,17 @@ fn main(){
 
     println!("Number of processes: {}", sys.processes().len());
 
-    let processes = processinfo(&mut sys);
-
-    for process in processes {
-        println!("PID: {}", process.pid);
-        println!("Name: {}", process.name);
-        println!("CPU Usage: {:.2}%", process.cpu_usage);
-        println!("Memory: {} KB", process.memory);
-        println!("*****************************");
-    }
+    println!("WHEN PROGRAM OPENED");
 
     //UI
 
     let ui = MainWindow::new().unwrap();
+
+    //Refresh everything
+
+    sys.refresh_all();
+    thread::sleep(sysinfo::MINIMUM_CPU_UPDATE_INTERVAL);
+    sys.refresh_all();
 
     // RAM
     let mut ram = raminfo(&sys);
@@ -406,6 +405,8 @@ fn main(){
 
     ui.on_refresh_clicked(move || {
         //refresh system variables
+        sys.refresh_all();
+        thread::sleep(sysinfo::MINIMUM_CPU_UPDATE_INTERVAL);
         sys.refresh_all();
 
         let ui = ui_weak.upgrade().unwrap();
