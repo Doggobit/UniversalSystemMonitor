@@ -1,6 +1,7 @@
 use std::rc::Rc;
+use slint::{SharedString, VecModel};
 use sysinfo::{Components, Disks, Networks, System, Pid};
-use std::{env::args, process::exit};
+use std::{env::args, process::exit, thread, {time::Duration}, {cell::RefCell}};
 
 slint::include_modules!();
 
@@ -327,72 +328,120 @@ fn main(){
     let ui = MainWindow::new().unwrap();
 
     // RAM
-    let ram = raminfo(&sys);
-    ui.set_total_ram_gb(ram.total_gb      as i32);
-    ui.set_used_ram_gb(ram.used_gb        as i32);
+    let mut ram = raminfo(&sys);
+    ui.set_total_ram_gb(ram.total_gb as i32);
+    ui.set_used_ram_gb(ram.used_gb as i32);
     ui.set_total_swap_gb(ram.total_swap_gb as i32);
-    ui.set_used_swap_gb(ram.used_swap_gb  as i32);
+    ui.set_used_swap_gb(ram.used_swap_gb as i32);
 
     // CPU
-    let cpu = cpuinfo(&sys);
+    let mut cpu = cpuinfo(&sys);
     ui.set_cpu_usage(cpu.usage_percent);
-    ui.set_num_cpus(cpu.num_cpus          as i32);
+    ui.set_num_cpus(cpu.num_cpus as i32);
     ui.set_cpu_frequency_mhz(cpu.frequency_mhz as i32);
 
     // Components
     ui.set_components(Rc::new(slint::VecModel::from(
         componentinfo().into_iter().map(|c| ComponentData {
-            label:       c.label.into(),
-            temperature: c.temperature,
+            label:c.label.into(),
+            temperature:c.temperature,
         }).collect::<Vec<_>>()
     )).into());
 
     // Disks
     ui.set_disks(Rc::new(slint::VecModel::from(
         diskinfo().into_iter().map(|d| DiskData {
-            name:          d.name.into(),
-            total_gb:      d.total_space_gb     as i32,
-            available_gb:  d.available_space_gb as i32,
+            name:d.name.into(),
+            total_gb:d.total_space_gb as i32,
+            available_gb:d.available_space_gb as i32,
         }).collect::<Vec<_>>()
     )).into());
 
     // Networks
     ui.set_networks(Rc::new(slint::VecModel::from(
         networkinfo().into_iter().map(|n| NetworkData {
-            interface_name: n.interface_name.into(),
-            received:       format_bytes(n.received_bytes).into(),
-            transmitted:    format_bytes(n.transmitted_bytes).into(),
+            interface_name:n.interface_name.into(),
+            received:format_bytes(n.received_bytes).into(),
+            transmitted:format_bytes(n.transmitted_bytes).into(),
         }).collect::<Vec<_>>()
     )).into());
 
-    // Processes — keep full list for filtering
-    let all_procs: Vec<ProcessData> = processinfo(&mut sys).into_iter().map(|p| ProcessData {
-        pid:       p.pid.as_u32() as i32,
-        name:      p.name.into(),
-        cpu_usage: p.cpu_usage,
-        memory:    format_bytes(p.memory).into(),
-    }).collect();
+    // Processes
+    let all_procs_shared: Rc<RefCell<Vec<ProcessData>>> = Rc::new(RefCell::new(
+        processinfo(&mut sys).into_iter().map(|p| ProcessData {
+            pid:       p.pid.as_u32() as i32,
+            name:      p.name.into(),
+            cpu_usage: p.cpu_usage,
+            memory:    format_bytes(p.memory).into(),
+        }).collect()
+    ));
 
-    let proc_model = Rc::new(slint::VecModel::from(all_procs.clone()));
-    ui.set_processes(proc_model.clone().into());
+    ui.set_processes(
+        Rc::new(slint::VecModel::from(all_procs_shared.borrow().clone())).into()
+    );
 
     // Search/filter callback
+    let ui_weak_search = ui.as_weak();
     ui.on_search_requested({
-        let proc_model  = proc_model.clone();
-        let all_procs   = all_procs.clone();
+        let all_procs_shared = all_procs_shared.clone();
         move |term| {
             let t = term.to_string();
+            let data = all_procs_shared.borrow();
             let filtered: Vec<ProcessData> = if t.is_empty() {
-                all_procs.clone()
+                data.clone()
             } else {
-                all_procs.iter()
+                data.iter()
                     .filter(|p| p.name.as_str().contains(&*t))
                     .cloned()
                     .collect()
             };
-            proc_model.set_vec(filtered);
+            drop(data); // release borrow before touching ui
+            if let Some(ui) = ui_weak_search.upgrade() {
+                ui.set_processes(Rc::new(slint::VecModel::from(filtered)).into());
+            }
         }
     });
 
-    ui.run().unwrap();   // blocks until window is closed
+    let ui_weak = ui.as_weak();
+
+    ui.on_refresh_clicked(move || {
+        //refresh system variables
+        sys.refresh_all();
+
+        let ui = ui_weak.upgrade().unwrap();
+
+        //refresh RAM
+        ram = raminfo(&sys);
+        ui.set_total_ram_gb(ram.total_gb as i32);
+        ui.set_used_ram_gb(ram.used_gb as i32);
+        ui.set_total_swap_gb(ram.total_swap_gb as i32);
+        ui.set_used_swap_gb(ram.used_swap_gb as i32);
+
+        //refresh CPU
+        cpu = cpuinfo(&sys);
+        ui.set_cpu_usage(cpu.usage_percent);
+        ui.set_num_cpus(cpu.num_cpus as i32);
+        ui.set_cpu_frequency_mhz(cpu.frequency_mhz as i32);
+
+        //refresh networks
+        ui.set_networks(Rc::new(slint::VecModel::from(
+            networkinfo().into_iter().map(|n| NetworkData {
+                interface_name: n.interface_name.into(),
+                received:format_bytes(n.received_bytes).into(),
+                transmitted:format_bytes(n.transmitted_bytes).into(),
+        }).collect::<Vec<_>>()
+        )).into());
+
+        // refresh processes
+        let new_procs: Vec<ProcessData> = sys.processes().iter().map(|(pid, p)| ProcessData {
+            pid:pid.as_u32() as i32,
+            name:p.name().to_string().into(),
+            cpu_usage:p.cpu_usage(),
+            memory:format_bytes(p.memory()).into(),
+        }).collect();
+
+        *all_procs_shared.borrow_mut() = new_procs.clone();
+        ui.set_processes(Rc::new(slint::VecModel::from(new_procs)).into());
+    });
+    ui.run().unwrap();  // blocks until window is closed
 }

@@ -1,5 +1,5 @@
 import { Button, VerticalBox, HorizontalBox, TabWidget,
-         ListView, LineEdit, GroupBox } from "std-widgets.slint";
+         ListView, LineEdit, GroupBox} from "std-widgets.slint";
 
 export struct ComponentData { label: string, temperature: float }
 export struct DiskData      { name: string, total-gb: int, available-gb: int }
@@ -27,10 +27,14 @@ export component MainWindow inherits Window {
     in property <[ProcessData]>   processes;
 
     callback search-requested(string);
+    callback refresh_clicked();
 
     VerticalBox {
         Text { text: "System Monitor"; font-size: 22px; font-weight: 700; }
-
+        Button {
+            text: "refresh";
+            clicked => { refresh_clicked(); }
+        }
         TabWidget {
 
             Tab {
@@ -47,10 +51,10 @@ export component MainWindow inherits Window {
                     GroupBox {
                         title: "RAM";
                         VerticalBox {
-                            Text { text: "Total: "      + root.total-ram-gb  + " GB"; }
-                            Text { text: "Used: "       + root.used-ram-gb   + " GB"; }
-                            Text { text: "Swap total: " + root.total-swap-gb + " GB"; }
-                            Text { text: "Swap used: "  + root.used-swap-gb  + " GB"; }
+                            Text { text: "Total: "      + root.total-ram-gb  + " MB"; }
+                            Text { text: "Used: "       + root.used-ram-gb   + " MB"; }
+                            Text { text: "Swap total: " + root.total-swap-gb + " MB"; }
+                            Text { text: "Swap used: "  + root.used-swap-gb  + " MB"; }
                         }
                     }
                 }
@@ -111,6 +115,9 @@ export component MainWindow inherits Window {
 
             Tab {
                 title: "Temperatures";
+                if root.components.length == 0: HorizontalBox{
+                    Text { text: "Cannot acces data, are you running as an administrator?"; }
+                }
                 ListView {
                     for comp in root.components: Rectangle {
                         height: 48px;
