@@ -33,5 +33,4 @@ Than I press the refresh button and CPU usage is at 6%:
 # TO DO
 
 - Adding real-time monitoring with no refresh button;
-- Better data collecting of:  
-    - CPU usage of processes;
+- Get precise CPU usage for process

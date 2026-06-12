@@ -1,5 +1,5 @@
 use slint;
-use sysinfo::{Components, Disks, MINIMUM_CPU_UPDATE_INTERVAL, Networks, Pid, System};
+use sysinfo::{Components, Disks, MINIMUM_CPU_UPDATE_INTERVAL, Networks, Pid, ProcessRefreshKind, System};
 use std::{env::args, process::exit, thread, {cell::RefCell}, rc::Rc};
 
 slint::include_modules!();
@@ -158,14 +158,20 @@ struct ProcessInfo {
 }
 
 fn processinfo(sys: &mut System) -> Vec<ProcessInfo> {
-    sys.refresh_processes();
+
+    let refresh = ProcessRefreshKind::new().with_cpu().with_memory().without_cmd().without_cwd().without_disk_usage().without_exe().without_user();
+
+    sys.refresh_processes_specifics(refresh);
     thread::sleep(MINIMUM_CPU_UPDATE_INTERVAL);
-    sys.refresh_processes();
+    sys.refresh_processes_specifics(refresh);
+    
+
+    let num_cpus = cpuinfo(sys).num_cpus as f32;
 
     let processes = sys.processes().iter().map(|(pid, process)| ProcessInfo {
         pid: *pid,
         name: process.name().to_string(),
-        cpu_usage: process.cpu_usage() / sys.cpus().len() as f32,
+        cpu_usage: (process.cpu_usage() / num_cpus),
         memory: process.memory(),
     }).collect();
     
@@ -367,5 +373,6 @@ fn main(){
         *all_procs_shared.borrow_mut() = new_procs.clone();
         ui.set_processes(Rc::new(slint::VecModel::from(new_procs)).into());
     });
+
     ui.run().unwrap();  // blocks until window is closed
 }
