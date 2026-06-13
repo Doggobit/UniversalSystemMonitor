@@ -366,7 +366,7 @@ fn main(){
         let new_procs: Vec<ProcessData> = sys.processes().iter().map(|(pid, p)| ProcessData {
             pid:pid.as_u32() as i32,
             name:p.name().to_string().into(),
-            cpu_usage:p.cpu_usage(),
+            cpu_usage:p.cpu_usage() / cpuinfo(&sys).num_cpus as f32,
             memory:format_bytes(p.memory()).into(),
         }).collect();
 
