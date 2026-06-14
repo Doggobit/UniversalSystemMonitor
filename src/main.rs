@@ -256,14 +256,14 @@ fn main(){
     sys.refresh_all();
 
     // RAM
-    let mut ram = raminfo(&sys);
+    let ram = raminfo(&sys);
     ui.set_total_ram_gb(ram.total_gb as i32);
     ui.set_used_ram_gb(ram.used_gb as i32);
     ui.set_total_swap_gb(ram.total_swap_gb as i32);
     ui.set_used_swap_gb(ram.used_swap_gb as i32);
 
     // CPU
-    let mut cpu = cpuinfo(&sys);
+    let cpu = cpuinfo(&sys);
     ui.set_cpu_usage(cpu.usage_percent);
     ui.set_num_cpus(cpu.num_cpus as i32);
     ui.set_cpu_frequency_mhz(cpu.frequency_mhz as i32);
@@ -351,17 +351,17 @@ fn main(){
         let ui = ui_weak.upgrade().unwrap();
 
         //refresh RAM
-        ram = raminfo(&sys);
-        ui.set_total_ram_gb(ram.total_gb as i32);
-        ui.set_used_ram_gb(ram.used_gb as i32);
-        ui.set_total_swap_gb(ram.total_swap_gb as i32);
-        ui.set_used_swap_gb(ram.used_swap_gb as i32);
+        let ram2 = raminfo(&sys);
+        ui.set_total_ram_gb(ram2.total_gb as i32);
+        ui.set_used_ram_gb(ram2.used_gb as i32);
+        ui.set_total_swap_gb(ram2.total_swap_gb as i32);
+        ui.set_used_swap_gb(ram2.used_swap_gb as i32);
 
         //refresh CPU
-        cpu = cpuinfo(&sys);
-        ui.set_cpu_usage(cpu.usage_percent);
-        ui.set_num_cpus(cpu.num_cpus as i32);
-        ui.set_cpu_frequency_mhz(cpu.frequency_mhz as i32);
+        let cpu2 = cpuinfo(&sys);
+        ui.set_cpu_usage(cpu2.usage_percent);
+        ui.set_num_cpus(cpu2.num_cpus as i32);
+        ui.set_cpu_frequency_mhz(cpu2.frequency_mhz as i32);
 
         //refresh networks
         ui.set_networks(Rc::new(slint::VecModel::from(
