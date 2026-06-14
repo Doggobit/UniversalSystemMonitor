@@ -30,6 +30,6 @@ Now we see that CPU usage is at 5%:
 Than I press the refresh button and CPU usage is at 6%:  
 ![Refresh2](imgs/Refr2.png)
 
-# TO DO
-
-- Adding real-time monitoring with no refresh button;
+### Kill processes
+You can kill every process you want just by pressing the "kill" button under the proces name:  
+![KillProc](imgs/KillProc.png)

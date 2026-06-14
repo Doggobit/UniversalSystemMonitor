@@ -1,6 +1,6 @@
 use slint;
 use sysinfo::{Components, Disks, MINIMUM_CPU_UPDATE_INTERVAL, Networks, Pid, ProcessRefreshKind, System};
-use std::{env::args, process::exit, thread, {cell::RefCell}, rc::Rc};
+use std::{cell::RefCell, env::args, process::exit, rc::Rc, thread};
 
 slint::include_modules!();
 
@@ -307,6 +307,16 @@ fn main(){
     ui.set_processes(
         Rc::new(slint::VecModel::from(all_procs_shared.borrow().clone())).into()
     );
+
+    //Kill process request
+    ui.on_kill_requested({
+            |pid| {
+                let s = System::new_all();
+                if let Some(process) = s.process(Pid::from_u32(pid as u32)) {
+                    sysinfo::Process::kill(process);
+            }
+        }
+    });
 
     // Search/filter callback
     let ui_weak_search = ui.as_weak();

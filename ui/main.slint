@@ -28,11 +28,12 @@ export component MainWindow inherits Window {
 
     callback search-requested(string);
     callback refresh_clicked();
+    callback kill_requested(int);
 
     VerticalBox {
         Text { text: "System Monitor"; font-size: 22px; font-weight: 700; }
         Button {
-            text: "refresh";
+            text: "Refresh";
             clicked => { refresh_clicked(); }
         }
         TabWidget {
@@ -51,10 +52,10 @@ export component MainWindow inherits Window {
                     GroupBox {
                         title: "RAM";
                         VerticalBox {
-                            Text { text: "Total: "      + root.total-ram-gb  + " MB"; }
-                            Text { text: "Used: "       + root.used-ram-gb   + " MB"; }
+                            Text { text: "Total: " + root.total-ram-gb  + " MB"; }
+                            Text { text: "Used: " + root.used-ram-gb   + " MB"; }
                             Text { text: "Swap total: " + root.total-swap-gb + " MB"; }
-                            Text { text: "Swap used: "  + root.used-swap-gb  + " MB"; }
+                            Text { text: "Swap used: " + root.used-swap-gb  + " MB"; }
                         }
                     }
                 }
@@ -105,8 +106,16 @@ export component MainWindow inherits Window {
                             height: 56px;
                             VerticalBox {
                                 padding: 4px;
+                                spacing: -10px;
                                 Text { text: "[" + proc.pid + "] " + proc.name; font-weight: 700; }
                                 Text { text: "CPU: " + proc.cpu-usage + "%   Mem: " + proc.memory; }
+                                Button { 
+                                    width: 100px;
+                                    height: 20px;
+                                    x: 70px;
+                                    text: "KILL";
+                                    clicked => {root.kill_requested(proc.pid)};
+                                }
                             }
                         }
                     }
