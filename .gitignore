@@ -2,3 +2,4 @@
 commit.py
 *.jks
 *.env
+Cargo.toml
