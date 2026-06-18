@@ -1,2 +1,4 @@
 /target
 commit.py
+*.jks
+*.env

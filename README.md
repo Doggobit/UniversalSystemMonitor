@@ -19,3 +19,8 @@ Than I press the refresh button and CPU usage is at 6%:
 ### Kill processes
 You can kill every process you want just by pressing the "kill" button under the proces name:  
 ![KillProc](imgs/KillProc.png)
+
+# SECURITY UPDATE
+The signing key of the .apk was leaked and because of that it has been changed, know any .apk file with the previus signing key is consideret unofficial.
+- **DO NOT TRUST OR INSTALL ANYTHING THAT HAS THE OLD SIGNING KEY**
+- **YOU MUST UNINSTALL THE OLD VERSION OF THE .apk FILE**

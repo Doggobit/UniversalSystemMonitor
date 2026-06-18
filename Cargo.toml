@@ -31,8 +31,8 @@ min_sdk_version = 30
 target_sdk_version = 31
 
 [package.metadata.android.signing.release]
-path = "usm-key.jks"
-keystore_password = "u9rDVd67Y5sL"
+path = "project-key.jks"
+keystore_password = "${KEYSTORE_PASSWORD}"
 
 [build-dependencies]
 slint-build = "1.15.0"
