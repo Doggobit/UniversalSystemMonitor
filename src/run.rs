@@ -6,7 +6,23 @@ use crate::run::ui_definitions::{DiskData, NetworkData, ComponentData, ProcessDa
 use slint::{ComponentHandle, ModelRc};
 use sysinfo::{System, Pid};
 use std::{cell::RefCell, rc::Rc, thread};
+
+#[cfg(target_os = "android")]
+use android_clipboard::{self, set_text};
+
+#[cfg(target_os = "android")]
+fn copy_to_clipboard_android(str: String) -> () {
+   set_text(str);
+}
+
+#[cfg(not(target_os = "android"))]
 use arboard::{Clipboard};
+
+#[cfg(not(target_os = "android"))]
+fn copy_to_clipboard(str: String) -> () {
+   let mut clipboard = Clipboard::new().unwrap();
+   let _set = clipboard.set_text(str);
+}
 
 pub fn run_app(ui: MainWindow) {
     let mut sys = System::new_all();
@@ -102,8 +118,11 @@ pub fn run_app(ui: MainWindow) {
                     let copy = cwd.clone();
                     let popup_string = String::from(cwd + " copied!");
                     ui_copy.set_copy_txt(popup_string.into());
-                    let mut clipboard = Clipboard::new().unwrap();
-                    let _set = clipboard.set_text(copy);
+                    #[cfg(target_os = "android")]
+                    copy_to_clipboard_android(copy);
+                    
+                    #[cfg(not(target_os = "android"))]
+                    copy_to_clipboard(copy);
                 },
                 None => {
                     let err_txt: String = String::from("UNABLE TO COPY CWD");
