@@ -1,0 +1,39 @@
+[package]
+name = "universal_system_monitor"
+version = "0.1.0"
+edition = "2024"
+build = "build.rs"
+
+[profile.dev]
+opt-level = 0
+debug = true
+
+[profile.release]
+opt-level = 2
+debug = false
+
+[lib]
+name = "system_monitor"
+crate-type = ["cdylib"]
+
+[dependencies]
+sysinfo = "0.30"
+raw-cpuid = "10.6"
+slint = { version = "1.16.1", features = ["backend-android-activity-06"] }
+i-slint-backend-android-activity = "1.16.1"
+arboard = "3.6.1"
+
+[package.metadata.android]
+package = "com.foo.bar"
+build_targets = ["aarch64-linux-android", "x86_64-linux-android"]
+
+[package.metadata.android.sdk]
+min_sdk_version = 30
+target_sdk_version = 31
+
+[package.metadata.android.signing.release]
+path = "project-key.jks"
+keystore_password = "[PASSWORD]"
+
+[build-dependencies]
+slint-build = "1.15.0"

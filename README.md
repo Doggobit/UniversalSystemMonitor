@@ -20,7 +20,16 @@ Than I press the refresh button and CPU usage is at 6%:
 You can kill every process you want just by pressing the "kill" button under the proces name:  
 ![KillProc](imgs/KillProc.png)
 
+### Copy process cwd
+You can copy process cwd just by pressing the button "copy process cwd":  
+![CWD](imgs/cwd.png)  
+After you pressed the button a pop-up will appear and to remove it you just have to click somewhere:  
+![PopUp](imgs/PopUp.png)
+
 # SECURITY UPDATE
 The signing key of the .apk was leaked and because of that it has been changed, know any .apk file with the previus signing key is consideret unofficial.
 - **DO NOT TRUST OR INSTALL ANYTHING THAT HAS THE OLD SIGNING KEY**
 - **YOU MUST UNINSTALL THE OLD VERSION OF THE .apk FILE**
+
+# Cargo.toml update
+For safefty reason the Cargo.toml file is not tracked anymore, all the updates now are in cargo.toml.template file

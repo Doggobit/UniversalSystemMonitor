@@ -1,5 +1,5 @@
 use sysinfo::{Components, Disks, MINIMUM_CPU_UPDATE_INTERVAL, Networks, Pid, ProcessRefreshKind, System};
-use std::thread;
+use std::{ffi::OsStr, thread};
 
 //conversions
 pub fn kb_to_gb(kb: u64) -> u64 {
@@ -151,7 +151,7 @@ pub struct ProcessInfo {
     pub pid: Pid,
     pub name: String,
     pub cpu_usage: f32,
-    pub memory: u64,
+    pub memory: u64
 }
 
 pub fn processinfo(sys: &mut System) -> Vec<ProcessInfo> {
@@ -173,6 +173,14 @@ pub fn processinfo(sys: &mut System) -> Vec<ProcessInfo> {
     }).collect();
     
     return processes;
+}
+
+pub fn process_cwd_string(pid: Pid, sys: &System) -> Option<String> {
+    let process = sys.process(pid)?;
+    let cwd = process.cwd()?;
+    let os_str: &OsStr = cwd.as_os_str();
+    let str = os_str.to_str()?;
+    return Some(str.to_string());
 }
 
 //search process by name

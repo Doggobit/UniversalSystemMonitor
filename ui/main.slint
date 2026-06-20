@@ -25,16 +25,33 @@ export component MainWindow inherits Window {
     in property <[DiskData]>      disks;
     in property <[NetworkData]>   networks;
     in property <[ProcessData]>   processes;
+    //POP-UP TEXT
+    in property <string> copy-txt;
 
+    //CALLBACKS
     callback search-requested(string);
     callback refresh_clicked();
     callback kill_requested(int);
+    callback cwd_copy_requested(int);
 
     VerticalBox {
+        spacing: 4px;
         Text { text: "System Monitor"; font-size: 22px; font-weight: 700; }
         Button {
             text: "Refresh";
             clicked => { refresh_clicked(); }
+        }
+        popup := PopupWindow {
+        Rectangle { 
+                height:100%; 
+                width: 300%;
+                background: #575b5b;
+                Text { text: root.copy-txt;}
+            }
+        x: 20px;
+        y: 20px;
+        height: 50px;
+        width: 50px;
         }
         TabWidget {
 
@@ -101,13 +118,23 @@ export component MainWindow inherits Window {
                             clicked => { root.search-requested(search-box.text); }
                         }
                     }
+
                     ListView {
                         for proc in root.processes: Rectangle {
-                            height: 56px;
+                            height: 150px;
                             VerticalBox {
-                                padding: 4px;
-                                spacing: -10px;
+                                padding: 10px;
+                                spacing: -48px;
                                 Text { text: "[" + proc.pid + "] " + proc.name; font-weight: 700; }
+                                Button {
+                                    width: 200px;
+                                    height: 25px;
+                                    text: "Copy process cwd";
+                                    clicked => {
+                                        root.cwd_copy_requested(proc.pid);
+                                        popup.show();
+                                    };
+                                }
                                 Text { text: "CPU: " + proc.cpu-usage + "%   Mem: " + proc.memory; }
                                 Button { 
                                     width: 100px;

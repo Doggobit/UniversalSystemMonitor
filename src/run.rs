@@ -3,9 +3,10 @@ pub mod ui_definitions;
 
 use crate::{MainWindow};
 use crate::run::ui_definitions::{DiskData, NetworkData, ComponentData, ProcessData};
-use slint::ComponentHandle;
+use slint::{ComponentHandle, ModelRc};
 use sysinfo::{System, Pid};
 use std::{cell::RefCell, rc::Rc, thread};
+use arboard::{Clipboard};
 
 pub fn run_app(ui: MainWindow) {
     let mut sys = System::new_all();
@@ -36,13 +37,16 @@ pub fn run_app(ui: MainWindow) {
     )).into());
 
     // Disks
-    ui.set_disks(Rc::new(slint::VecModel::from(
+
+    let disk_vec: ModelRc<DiskData> = Rc::new(slint::VecModel::from(
         sysfuns::diskinfo().into_iter().map(|d| DiskData {
             name:d.name.into(),
             total_gb:d.total_space_gb as i32,
             available_gb:d.available_space_gb as i32,
         }).collect::<Vec<_>>()
-    )).into());
+    )).into();
+
+    ui.set_disks(disk_vec);
 
     // Networks
     ui.set_networks(Rc::new(slint::VecModel::from(
@@ -74,6 +78,38 @@ pub fn run_app(ui: MainWindow) {
                 if let Some(process) = s.process(Pid::from_u32(pid as u32)) {
                     sysinfo::Process::kill(process);
             }
+        }
+    });
+
+    //ui.on_cwd_copy_requested({
+    //    |pid| {
+    //        let sys = System::new_all();
+    //        let cwd = sysfuns::process_cwd_string(Pid::from_u32(pid as u32), &sys).unwrap();
+    //        let mut clipboard = Clipboard::new().unwrap();
+    //        let _res = clipboard.set_text(cwd);
+    //    }
+    //});
+
+    let ui_weak_copy = ui.as_weak();
+
+    ui.on_cwd_copy_requested({ move
+        |pid| {
+            let ui_copy = ui_weak_copy.upgrade().unwrap();
+            let sys = System::new_all();
+            let cwd = sysfuns::process_cwd_string(Pid::from_u32(pid as u32), &sys);
+            let _res = match cwd {
+                Some(cwd) => {
+                    let copy = cwd.clone();
+                    let popup_string = String::from(cwd + " copied!");
+                    ui_copy.set_copy_txt(popup_string.into());
+                    let mut clipboard = Clipboard::new().unwrap();
+                    let _set = clipboard.set_text(copy);
+                },
+                None => {
+                    let err_txt: String = String::from("UNABLE TO COPY CWD");
+                    ui_copy.set_copy_txt(err_txt.into());
+                }
+            };
         }
     });
 
