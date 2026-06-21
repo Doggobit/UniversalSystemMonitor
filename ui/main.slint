@@ -27,6 +27,8 @@ export component MainWindow inherits Window {
     in property <[ProcessData]>   processes;
     //POP-UP TEXT
     in property <string> copy-txt;
+    //SEARCH TEXT
+    in-out property <string> search-text;
 
     //CALLBACKS
     callback search-requested(string);
@@ -37,10 +39,7 @@ export component MainWindow inherits Window {
     VerticalBox {
         spacing: 4px;
         Text { text: "System Monitor"; font-size: 22px; font-weight: 700; }
-        Button {
-            text: "Refresh";
-            clicked => { refresh_clicked(); }
-        }
+        
         popup := PopupWindow {
         Rectangle { 
                 height:100%; 
@@ -111,6 +110,7 @@ export component MainWindow inherits Window {
                 VerticalBox {
                     HorizontalBox {
                         search-box := LineEdit { placeholder-text: "Filter by name..."; 
+                        text <=> root.search-text;
                         accepted => { root.search-requested(self.text); }
                         }
                         Button {

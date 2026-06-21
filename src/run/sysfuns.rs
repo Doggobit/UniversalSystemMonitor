@@ -1,4 +1,4 @@
-use sysinfo::{Components, Disks, MINIMUM_CPU_UPDATE_INTERVAL, Networks, Pid, ProcessRefreshKind, System};
+use sysinfo::{Components, Disks, Networks, Pid, System};
 use std::{ffi::OsStr, thread};
 
 //conversions
@@ -155,13 +155,6 @@ pub struct ProcessInfo {
 }
 
 pub fn processinfo(sys: &mut System) -> Vec<ProcessInfo> {
-
-    let refresh = ProcessRefreshKind::new().with_cpu().with_memory().without_cmd().without_cwd().without_disk_usage().without_exe().without_user();
-
-    sys.refresh_processes_specifics(refresh);
-    thread::sleep(MINIMUM_CPU_UPDATE_INTERVAL);
-    sys.refresh_processes_specifics(refresh);
-    
 
     let num_cpus = cpuinfo(sys).num_cpus as f32;
 

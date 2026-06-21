@@ -97,15 +97,6 @@ pub fn run_app(ui: MainWindow) {
         }
     });
 
-    //ui.on_cwd_copy_requested({
-    //    |pid| {
-    //        let sys = System::new_all();
-    //        let cwd = sysfuns::process_cwd_string(Pid::from_u32(pid as u32), &sys).unwrap();
-    //        let mut clipboard = Clipboard::new().unwrap();
-    //        let _res = clipboard.set_text(cwd);
-    //    }
-    //});
-
     let ui_weak_copy = ui.as_weak();
 
     ui.on_cwd_copy_requested({ move
@@ -158,9 +149,13 @@ pub fn run_app(ui: MainWindow) {
 
     ui.on_refresh_clicked(move || {
         //refresh system variables
-        sys.refresh_all();
+        sys.refresh_cpu();
+        sys.refresh_memory();
+        sys.refresh_processes();
         thread::sleep(sysinfo::MINIMUM_CPU_UPDATE_INTERVAL);
-        sys.refresh_all();
+        sys.refresh_cpu();
+        sys.refresh_memory();
+        sys.refresh_processes();
 
         let ui = ui_weak.upgrade().unwrap();
 
