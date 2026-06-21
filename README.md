@@ -8,9 +8,6 @@ You can than change the tab to see the information you need, and also go to the 
 ![ProcessTab](imgs/ProcessTab.png)  
 ![ProcessSearch](imgs/ProcessSearch.png)
 
-### The 'refresh button'
-To enable real time monitoring in a simple way I added a refresh button that allows you to constantly see the process and the usage of your components.
-
 Now we see that CPU usage is at 5%:  
 ![Refresh1](imgs/Refr1.png)  
 Than I press the refresh button and CPU usage is at 6%:  
