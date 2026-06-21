@@ -17,10 +17,12 @@ fn android_main(app: i_slint_backend_android_activity::AndroidApp) {
 
     let timer = slint::Timer::default();
 
-    timer.start(slint::TimerMode::Repeated, Duration::from_millis(1000), move || {
+    timer.start(slint::TimerMode::Repeated, Duration::from_millis(2500), move || {
 
         let ui = ui_weak.upgrade().unwrap();
         ui.invoke_refresh_clicked();
+        let text = ui.get_search_text();
+        ui.invoke_search_requested(text);
     
     });
 
