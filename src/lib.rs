@@ -2,6 +2,8 @@ pub mod run;
 
 pub use crate::run::ui_definitions::MainWindow;
 pub use std::time::Duration;
+
+#[cfg(target_os = "android")]
 use slint::ComponentHandle;
 
 //Android main

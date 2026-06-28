@@ -3,8 +3,9 @@ pub mod ui_definitions;
 
 use crate::{MainWindow};
 use crate::run::ui_definitions::{DiskData, NetworkData, ComponentData, ProcessData};
-use slint::{ComponentHandle, ModelRc};
+use slint::{ComponentHandle};
 use sysinfo::{System, Pid};
+use std::cmp::{self, Reverse};
 use std::{cell::RefCell, rc::Rc, thread};
 
 #[cfg(target_os = "android")]
@@ -54,7 +55,7 @@ pub fn run_app(ui: MainWindow) {
 
     // Disks
 
-    let disk_vec: ModelRc<DiskData> = Rc::new(slint::VecModel::from(
+    let disk_vec: Rc<RefCell<Vec<DiskData>>> = Rc::new(RefCell::new(
         sysfuns::diskinfo().into_iter().map(|d| DiskData {
             name:d.name.into(),
             total_gb:d.total_space_gb as i32,
@@ -62,16 +63,21 @@ pub fn run_app(ui: MainWindow) {
         }).collect::<Vec<_>>()
     )).into();
 
-    ui.set_disks(disk_vec);
+    disk_vec.borrow_mut().sort_unstable_by_key(|v| cmp::Reverse(v.available_gb));
+
+    ui.set_disks(Rc::new(slint::VecModel::from(disk_vec.borrow().clone())).into());
 
     // Networks
-    ui.set_networks(Rc::new(slint::VecModel::from(
+
+    let network_vec: Rc<RefCell<Vec<NetworkData>>> = Rc::new(RefCell::new(
         sysfuns::networkinfo().into_iter().map(|n| NetworkData {
             interface_name:n.interface_name.into(),
             received:sysfuns::format_bytes(n.received_bytes).into(),
             transmitted:sysfuns::format_bytes(n.transmitted_bytes).into(),
-        }).collect::<Vec<_>>()
-    )).into());
+        }).collect()
+    ));
+
+    ui.set_networks(Rc::new(slint::VecModel::from(network_vec.borrow().clone())).into());
 
     // Processes
     let all_procs_shared: Rc<RefCell<Vec<ProcessData>>> = Rc::new(RefCell::new(
@@ -82,6 +88,8 @@ pub fn run_app(ui: MainWindow) {
             memory:    sysfuns::format_bytes(p.memory).into(),
         }).collect()
     ));
+
+    all_procs_shared.borrow_mut().sort_unstable_by_key(|c| cmp::Reverse(c.cpu_usage as i128));
 
     ui.set_processes(
         Rc::new(slint::VecModel::from(all_procs_shared.borrow().clone())).into()
@@ -182,14 +190,16 @@ pub fn run_app(ui: MainWindow) {
         )).into());
 
         // refresh processes
-        let new_procs: Vec<ProcessData> = sys.processes().iter().map(|(pid, p)| ProcessData {
+        let mut new_procs: Vec<ProcessData> = sys.processes().iter().map(|(pid, p)| ProcessData {
             pid:pid.as_u32() as i32,
             name:p.name().to_string().into(),
             cpu_usage:p.cpu_usage() / sysfuns::cpuinfo(&sys).num_cpus as f32,
             memory:sysfuns::format_bytes(p.memory()).into(),
         }).collect();
 
-        *all_procs_shared.borrow_mut() = new_procs.clone();
+        new_procs.sort_unstable_by_key(|c| Reverse(c.cpu_usage as i128));
+
+        //*all_procs_shared.borrow_mut() = new_procs.clone();
         ui.set_processes(Rc::new(slint::VecModel::from(new_procs)).into());
     });
 
